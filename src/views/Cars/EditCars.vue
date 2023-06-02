@@ -1,7 +1,7 @@
 <template>
   <div class="wrapper">
     <TopNavigationComponent />
-    <SidebarComponent class="main-sidebar" />
+    <SidebarComponent  />
 
     <div class="content-wrapper">
       <div class="d-flex justify-content-center">
@@ -153,11 +153,11 @@
 </template>
 
 <script>
-import SidebarComponent from '../../components/SidebarComponent.vue'
-import TopNavigationComponent from '../../components/TopNavigationComponent.vue'
+import SidebarComponent from '@/components/SidebarComponent.vue'
+import TopNavigationComponent from '@/components/TopNavigationComponent.vue'
 import axios from 'axios'
 import { ref, onMounted } from 'vue'
-import API_URL from '../../config'
+import API_URL from '@/config'
 import { toast } from 'vue3-toastify'
 import 'vue3-toastify/dist/index.css'
 import { useRouter } from 'vue-router'

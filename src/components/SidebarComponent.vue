@@ -48,6 +48,78 @@
             
             </ul>
           </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fa fa-taxi"></i>
+              <p>
+               Cab Booking
+                <i class="right fas fa-angle-left"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <router-link to="/car-booking" class="nav-link ">
+                  <i class="fas fa-angle-right nav-icon"></i>
+                  <p>Booking Form</p>
+                </router-link>
+              </li>
+              <li class="nav-item">
+                <router-link to="/list-of-car-bookings" class="nav-link ">
+                  <i class="fas fa-angle-right nav-icon"></i>
+                  <p>List Of Bookings</p>
+                </router-link>
+              </li>
+            
+            </ul>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fa fa-book"></i>
+              <p>
+               Blogs
+                <i class="right fas fa-angle-left"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <router-link to="/add-blogs" class="nav-link ">
+                  <i class="fas fa-angle-right nav-icon"></i>
+                  <p>Blog Form</p>
+                </router-link>
+              </li>
+              <li class="nav-item">
+                <router-link to="/list-of-blogs" class="nav-link ">
+                  <i class="fas fa-angle-right nav-icon"></i>
+                  <p>List Of Blogs</p>
+                </router-link>
+              </li>
+            
+            </ul>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fa fa-plane"></i>
+              <p>
+               Services
+                <i class="right fas fa-angle-left"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <router-link to="/add-service" class="nav-link ">
+                  <i class="fas fa-angle-right nav-icon"></i>
+                  <p>Service Form</p>
+                </router-link>
+              </li>
+              <li class="nav-item">
+                <router-link to="/list-of-services" class="nav-link ">
+                  <i class="fas fa-angle-right nav-icon"></i>
+                  <p>List Of Services</p>
+                </router-link>
+              </li>
+            
+            </ul>
+          </li>
         </ul>
       </nav>
     </div>

@@ -12,13 +12,26 @@ import AddCars from '../views/Cars/AddCars.vue'
 import ListOfCars from '../views/Cars/ListOfCars.vue'
 import EditCars from '../views/Cars/EditCars.vue'
 import CarBooking from '../views/Cars/CarBooking.vue'
+import ListOfCarBookings from '../views/Cars/ListOfCarBookings.vue'
+import EditBookings from '../views/Cars/EditBookings.vue'
+import BlogForm from '../views/Blogs/BlogForm.vue'
+import ListOfBlogs from '../views/Blogs/ListOfBlogs.vue'
+import EditBlog from '../views/Blogs/EditBlog.vue'
+import ServiceForm from '../views/Services/ServiceForm.vue'
+import ListOfServices from '../views/Services/ListOfServices.vue'
+import EditService from '../views/Services/EditService.vue'
+import ClientView from '../views/ClientView/ClientView.vue'
+
+
+
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: 'Login',
-      component: LoginView
+      name: 'ClientView',
+      component: ClientView
     },
     {
       path: '/login',
@@ -102,8 +115,71 @@ const router = createRouter({
       meta: {
         requiresAuth: true
       }
-    }
-    
+    },
+    {
+      path: '/list-of-car-bookings',
+      name: 'list-of-car-bookings',
+      component: ListOfCarBookings,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/edit-booking/:id',
+      name: 'EditBooking',
+      component: EditBookings,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/add-blogs',
+      name: 'add-blogs',
+      component: BlogForm,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/list-of-blogs',
+      name: 'list-of-blogs',
+      component: ListOfBlogs,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/edit-blog/:id',
+      name: 'EditBlog',
+      component: EditBlog,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/add-service',
+      name: 'add-service',
+      component: ServiceForm,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/list-of-services',
+      name: 'list-of-services',
+      component: ListOfServices,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/edit-service/:id',
+      name: 'EditService',
+      component: EditService,
+      meta: {
+        requiresAuth: true
+      }
+    },
   ]
 })
 

@@ -1,7 +1,7 @@
 <template>
   <div class="wrapper">
     <TopNavigationComponent />
-    <SidebarComponent class="" />
+    <SidebarComponent />
     <div class="content-wrapper">
       <div class="row">
         <div class="col-12">
@@ -31,7 +31,15 @@
                       />
                     </td>
                     <td>{{ car.carTitle }}</td>
-                    <td>{{ car.created_at }}</td>
+                    <td>
+                      {{
+                        new Date(car.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })
+                      }}
+                    </td>
                     <td>
                       <button @click="editCar(car.id)" class="btn btn-primary">Edit</button>
                       <button @click="deleteCar(car.id)" class="btn btn-danger">Delete</button>
@@ -48,14 +56,14 @@
 </template>
 
 <script>
-import { onMounted, ref } from 'vue';
-import axios from 'axios';
-import { useRouter } from 'vue-router'; // Import the useRouter function
-import SidebarComponent from '../../components/SidebarComponent.vue';
-import TopNavigationComponent from '../../components/TopNavigationComponent.vue';
-import API_URL from '../../config';
-import { toast } from 'vue3-toastify';
-import 'vue3-toastify/dist/index.css';
+import { onMounted, ref } from 'vue'
+import axios from 'axios'
+import { useRouter } from 'vue-router'
+import SidebarComponent from '@/components/SidebarComponent.vue'
+import TopNavigationComponent from '@/components/TopNavigationComponent.vue'
+import API_URL from '@/config'
+import { toast } from 'vue3-toastify'
+import 'vue3-toastify/dist/index.css'
 
 export default {
   components: {
@@ -63,21 +71,21 @@ export default {
     TopNavigationComponent
   },
   setup() {
-    const cars = ref([]);
-    const router = useRouter(); // Access the router instance
+    const cars = ref([])
+    const router = useRouter() // Access the router instance
 
     const fetchCars = async () => {
       try {
-        const response = await axios.get(`${API_URL}/listofcars`);
-        cars.value = response.data;
+        const response = await axios.get(`${API_URL}/listofcars`)
+        cars.value = response.data
       } catch (error) {
-        console.error(error);
+        console.error(error)
       }
-    };
+    }
 
     const deleteCar = async (carId) => {
       try {
-        const response = await axios.delete(`${API_URL}/cars/${carId}`);
+        const response = await axios.delete(`${API_URL}/cars/${carId}`)
         if (response.status === 200) {
           toast.success(response.data.message, {
             position: 'top-right',
@@ -88,8 +96,8 @@ export default {
             draggable: true,
             progress: undefined,
             theme: 'colored'
-          });
-          fetchCars();
+          })
+          fetchCars()
         }
       } catch (error) {
         toast.error('An error occurred while deleting the car', {
@@ -101,24 +109,23 @@ export default {
           draggable: true,
           progress: undefined,
           theme: 'colored'
-        });
+        })
       }
-    };
+    }
 
     const editCar = (carId) => {
-  router.push({ name: 'EditCar', params: { id: carId } });
-};
-
+      router.push({ name: 'EditCar', params: { id: carId } })
+    }
 
     onMounted(() => {
-      fetchCars();
-    });
+      fetchCars()
+    })
 
     return {
       cars,
       deleteCar,
       editCar
-    };
+    }
   }
-};
+}
 </script>

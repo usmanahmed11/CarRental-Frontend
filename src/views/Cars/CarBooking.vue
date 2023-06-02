@@ -2,6 +2,7 @@
   <div class="wrapper">
     <TopNavigationComponent />
     <SidebarComponent class="main-sidebar" />
+
     <div class="content-wrapper">
       <div class="d-flex justify-content-center">
         <div class="col-md-10">
@@ -13,7 +14,7 @@
             <div class="card-body">
               <div class="row">
                 <div class="col-md-6">
-                  <form @submit.prevent="handleSubmit" class="form-horizontal">
+                  <form class="form-horizontal">
                     <div class="form-group">
                       <label for="name">Name:</label>
                       <input
@@ -99,26 +100,38 @@
                         {{ carError }}
                       </div>
                     </div>
-                    <div class="card-footer">
-                      <router-link to="/dashboard">
-                        <button class="btn btn-primary button" type="button">Cancel</button>
-                      </router-link>
-                      <button type="submit" class="btn btn-success">Proceed Checkout</button>
-                    </div>
+
+                    <router-link to="/dashboard">
+                      <button class="btn btn-primary button" type="button">Cancel</button>
+                    </router-link>
+
+                    <stripe-checkout
+                      ref="checkoutRef"
+                      mode="payment"
+                      :pk="publishableKey"
+                      :line-items="lineItems"
+                      :success-url="successURL"
+                      :cancel-url="cancelURL"
+                      @loading="(v) => (loading = v)"
+                    />
+                    <button @click="stripePayment" class="stripe-button">Pay now!</button>
+
+                    <button @click="handleSubmit" class="paypal-button">
+                      <i class="paypal-logo">Pay</i><i class="paypal-logo">Pal</i>
+                    </button>
                   </form>
                 </div>
                 <div class="col-md-6">
                   <div class="booking-details">
                     <h2>Booking Details</h2>
-                    <p>Name: {{ booking.name }}</p>
-                    <p>Phone Number: {{ booking.phone }}</p>
-                    <p>Email: {{ booking.email }}</p>
-                    <p>Departure Date and Time: {{ booking.departureDateTime }}</p>
-                    <p>Return Date and Time: {{ booking.returnDateTime }}</p>
-                    <p>Car: {{ booking.car }}</p>
-                    <p>Price: {{ getPrice() }} Rs /hr</p>
-                    <p>Total Bill: {{ calculateBill.toFixed(0) }} Rs</p>
-
+                    <p><strong> Name:</strong> {{ booking.name }}</p>
+                    <p><strong>Phone Number:</strong> {{ booking.phone }}</p>
+                    <p><strong>Email:</strong> {{ booking.email }}</p>
+                    <p><strong>Departure Date and Time:</strong> {{ booking.departureDateTime }}</p>
+                    <p><strong>Return Date and Time: </strong>{{ booking.returnDateTime }}</p>
+                    <p><strong>Car:</strong> {{ booking.car }}</p>
+                    <p><strong>Price:</strong> {{ getPrice() }} $ /hr</p>
+                    <p><strong>Total Bill:</strong> {{ calculateBill.toFixed(0) }} $</p>
                   </div>
                 </div>
               </div>
@@ -130,18 +143,22 @@
   </div>
 </template>
 
-
 <script>
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
-import API_URL from '../../config'
-import SidebarComponent from '../../components/SidebarComponent.vue'
-import TopNavigationComponent from '../../components/TopNavigationComponent.vue'
+import API_URL from '@/config'
+import SidebarComponent from '@/components/SidebarComponent.vue'
+import TopNavigationComponent from '@/components/TopNavigationComponent.vue'
+import { toast } from 'vue3-toastify'
+import 'vue3-toastify/dist/index.css'
+import { useRouter, useRoute } from 'vue-router'
+import { StripeCheckout } from '@vue-stripe/vue-stripe'
 
 export default {
   components: {
     SidebarComponent,
-    TopNavigationComponent
+    TopNavigationComponent,
+    StripeCheckout
   },
 
   setup() {
@@ -153,6 +170,8 @@ export default {
       returnDateTime: '',
       car: ''
     })
+    const { localStorage } = window
+
     const cars = ref([])
     const nameError = ref(null)
     const phoneError = ref(null)
@@ -160,6 +179,86 @@ export default {
     const datetimeError = ref(null)
     const returnDateTimeError = ref(null)
     const carError = ref(null)
+    const route = useRoute()
+    const router = useRouter()
+    const checkoutRef = ref(null)
+    const publishableKey =
+      'pk_test_51NE6AVBIPVlJ4mt0xjpNsBF37Dus99OLspog6U4DYOlGa7XTmZumxf3KGzJXCuSGm1C7jv7sCxZatK3fw6jA66CD004S3P4pqS'
+    const loading = ref(false)
+    const lineItems = ref([
+      {
+        price: 'price_1NEULNBIPVlJ4mt0gdE7eDk8',
+        quantity: 1
+      }
+    ])
+    const successURL = ref('http://localhost:5173/car-booking?success=true')
+    const cancelURL = ref('http://localhost:5173/car-booking')
+
+    const calculateBill = computed(() => {
+      const selectedCar = cars.value.find((car) => car.carTitle === booking.value.car)
+      if (selectedCar) {
+        const departure = new Date(booking.value.departureDateTime)
+        const returnDate = new Date(booking.value.returnDateTime)
+        const hours = Math.abs(returnDate - departure) / 36e5
+        return selectedCar.price * hours
+      }
+      return 0
+    })
+    const getPrice = () => {
+      const selectedCar = cars.value.find((car) => car.carTitle === booking.value.car)
+      return selectedCar ? selectedCar.price : ''
+    }
+
+    const stripePayment = async (e) => {
+      e.preventDefault()
+
+      nameError.value = null
+      phoneError.value = null
+      emailError.value = null
+      datetimeError.value = null
+      returnDateTimeError.value = null
+      carError.value = null
+
+      if (!booking.value.name) {
+        nameError.value = 'Name is required'
+      }
+      if (!booking.value.phone) {
+        phoneError.value = 'Phone No is required'
+      }
+      if (!booking.value.email) {
+        emailError.value = 'Email is required'
+      }
+      if (!booking.value.departureDateTime) {
+        datetimeError.value = 'Departure Date & Time is required'
+      }
+      if (!booking.value.returnDateTime) {
+        returnDateTimeError.value = 'Return Date & Time is required'
+      }
+      if (!booking.value.car) {
+        carError.value = 'Please Select a Car For Checkout'
+      }
+
+      if (
+        !booking.value.name ||
+        !booking.value.phone ||
+        !booking.value.email ||
+        !booking.value.departureDateTime ||
+        !booking.value.returnDateTime ||
+        !booking.value.car
+      ) {
+        return
+      }
+
+      const totalBill = calculateBill.value.toFixed(0)
+
+      const bookingData = {
+        ...booking.value,
+        totalBill: totalBill
+      }
+      localStorage.setItem('booking', JSON.stringify(bookingData))
+
+      checkoutRef.value.redirectToCheckout()
+    }
 
     const fetchCars = async () => {
       try {
@@ -171,18 +270,67 @@ export default {
     }
 
     onMounted(() => {
-      fetchCars()
+      const paymentSuccess = route.query.success === 'true'
+
+      if (paymentSuccess) {
+        const bookingData = JSON.parse(localStorage.getItem('booking'))
+
+        if (bookingData) {
+          axios
+            .post(`${API_URL}/paymentStripe`, bookingData)
+            .then((response) => {
+              if (response.status === 200) {
+                toast.success('Your Booking Has Been Successful', {
+                  position: 'top-right',
+                  autoClose: 5000,
+                  hideProgressBar: false,
+                  closeOnClick: true,
+                  pauseOnHover: true,
+                  draggable: true,
+                  progress: undefined,
+                  theme: 'colored'
+                })
+              }
+            })
+            .catch((error) => {
+              console.error(error)
+            })
+          localStorage.removeItem('booking')
+        }
+      }
     })
 
-    const calculateBill = computed(() => {
-      const selectedCar = cars.value.find((car) => car.carTitle === booking.value.car)
-      if (selectedCar) {
-        const departure = new Date(booking.value.departureDateTime)
-        const returnDate = new Date(booking.value.returnDateTime)
-        const hours = Math.abs(returnDate - departure) / 36e5 // Calculate the duration in hours
-        return selectedCar.price * hours
+    onMounted(() => {
+      fetchCars()
+
+      const paymentSuccess = route.query.success === 'truee'
+      const paymentFailure = route.query.success === 'falsee'
+
+      if (paymentSuccess) {
+        toast.success('Your Booking Has Been Successful', {
+          position: 'top-right',
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: 'colored'
+        })
+        router.replace({ query: { ...route.query, success: undefined } })
+      } else if (paymentFailure) {
+        toast.error('Booking failed. Please try again.', {
+          position: 'top-right',
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: 'colored'
+        })
+        router.replace({ query: { ...route.query, success: undefined } })
       }
-      return 0
     })
 
     const handleSubmit = async (e) => {
@@ -232,21 +380,29 @@ export default {
       formData.append('departure-date', booking.value.departureDateTime)
       formData.append('return-date', booking.value.returnDateTime)
       formData.append('cars', booking.value.car)
-      formData.append('total-bill', calculateBill.value.toFixed(0));
+      formData.append('totalBill', calculateBill.value.toFixed(0))
 
       try {
         const response = await axios.post(`${API_URL}/payment/initiate`, formData)
+
         if (response.status === 200) {
-          console.log(response)
+          const data = response.data.redirect_url
+          window.location.href = data
         }
       } catch (error) {
-        console.log(error)
+        toast.error('An error occurred while booking the car', {
+          position: 'top-right',
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: 'colored'
+        })
       }
     }
-    const getPrice = () => {
-      const selectedCar = cars.value.find((car) => car.carTitle === booking.value.car)
-      return selectedCar ? selectedCar.price : ''
-    }
+
     return {
       booking,
       cars,
@@ -258,7 +414,14 @@ export default {
       emailError,
       datetimeError,
       returnDateTimeError,
-      carError
+      carError,
+      publishableKey,
+      loading,
+      lineItems,
+      successURL,
+      cancelURL,
+      stripePayment,
+      checkoutRef
     }
   }
 }
@@ -277,8 +440,53 @@ export default {
   flex: 1;
   margin-left: 20px;
 }
+.box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100vh;
+}
+
+.paypal-logo {
+  font-family: Verdana, Tahoma;
+  font-weight: bold;
+  font-size: 26px;
+  color: #253b80;
+}
+
+.paypal-button {
+  padding: 5px 5px;
+  border: 1px solid #ff9933;
+  border-radius: 5px;
+  background-image: linear-gradient(#fff0a8, #f9b421);
+  margin: 0 auto;
+  min-width: 138px;
+  position: relative;
+}
+
+.paypal-button .paypal-logo {
+  display: inline-block;
+  text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.6);
+  font-size: 20px;
+}
+.stripe-button {
+  display: inline-block;
+  background-color: #6772e5;
+  color: #fff;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.stripe-button:hover {
+  background-color: #5773e6;
+}
+
+.stripe-button:active {
+  background-color: #4767d1;
+}
 </style>
-
-<!-- yQ0dF6iV2gG3yD5qA2nM1tC5xB2sD7nN7pT6nJ2oT2gX6yT6rV client secret -->
-
-<!-- 57f39365-f1b8-4e51-b45d-ccb4dad3aa54 client id -->
