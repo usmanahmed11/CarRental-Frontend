@@ -105,15 +105,6 @@
                       <button class="btn btn-primary button" type="button">Cancel</button>
                     </router-link>
 
-                    <stripe-checkout
-                      ref="checkoutRef"
-                      mode="payment"
-                      :pk="publishableKey"
-                      :line-items="lineItems"
-                      :success-url="successURL"
-                      :cancel-url="cancelURL"
-                      @loading="(v) => (loading = v)"
-                    />
                     <button @click="stripePayment" class="stripe-button">Pay now!</button>
 
                     <button @click="handleSubmit" class="paypal-button">
@@ -152,13 +143,12 @@ import TopNavigationComponent from '@/components/TopNavigationComponent.vue'
 import { toast } from 'vue3-toastify'
 import 'vue3-toastify/dist/index.css'
 import { useRouter, useRoute } from 'vue-router'
-import { StripeCheckout } from '@vue-stripe/vue-stripe'
+import { loadStripe } from '@stripe/stripe-js'
 
 export default {
   components: {
     SidebarComponent,
-    TopNavigationComponent,
-    StripeCheckout
+    TopNavigationComponent
   },
 
   setup() {
@@ -170,7 +160,9 @@ export default {
       returnDateTime: '',
       car: ''
     })
-    const { localStorage } = window
+    const stripePromise = loadStripe(
+      'pk_test_51NE6AVBIPVlJ4mt0xjpNsBF37Dus99OLspog6U4DYOlGa7XTmZumxf3KGzJXCuSGm1C7jv7sCxZatK3fw6jA66CD004S3P4pqS'
+    )
 
     const cars = ref([])
     const nameError = ref(null)
@@ -182,17 +174,6 @@ export default {
     const route = useRoute()
     const router = useRouter()
     const checkoutRef = ref(null)
-    const publishableKey =
-      'pk_test_51NE6AVBIPVlJ4mt0xjpNsBF37Dus99OLspog6U4DYOlGa7XTmZumxf3KGzJXCuSGm1C7jv7sCxZatK3fw6jA66CD004S3P4pqS'
-    const loading = ref(false)
-    const lineItems = ref([
-      {
-        price: 'price_1NEULNBIPVlJ4mt0gdE7eDk8',
-        quantity: 1
-      }
-    ])
-    const successURL = ref('http://localhost:5173/car-booking?success=true')
-    const cancelURL = ref('http://localhost:5173/car-booking')
 
     const calculateBill = computed(() => {
       const selectedCar = cars.value.find((car) => car.carTitle === booking.value.car)
@@ -255,9 +236,24 @@ export default {
         ...booking.value,
         totalBill: totalBill
       }
-      localStorage.setItem('booking', JSON.stringify(bookingData))
 
-      checkoutRef.value.redirectToCheckout()
+      try {
+        const response = await axios.post(`${API_URL}/stripe-payment`, bookingData)
+
+        if (response.status === 200) {
+          const sessionId = response.data.sessionId
+          const stripe = await stripePromise
+          const result = await stripe.redirectToCheckout({
+            sessionId: sessionId
+          })
+
+          if (result.error) {
+            console.error(result.error.message)
+          }
+        }
+      } catch (error) {
+        console.error(error)
+      }
     }
 
     const fetchCars = async () => {
@@ -270,41 +266,10 @@ export default {
     }
 
     onMounted(() => {
-      const paymentSuccess = route.query.success === 'true'
-
-      if (paymentSuccess) {
-        const bookingData = JSON.parse(localStorage.getItem('booking'))
-
-        if (bookingData) {
-          axios
-            .post(`${API_URL}/paymentStripe`, bookingData)
-            .then((response) => {
-              if (response.status === 200) {
-                toast.success('Your Booking Has Been Successful', {
-                  position: 'top-right',
-                  autoClose: 5000,
-                  hideProgressBar: false,
-                  closeOnClick: true,
-                  pauseOnHover: true,
-                  draggable: true,
-                  progress: undefined,
-                  theme: 'colored'
-                })
-              }
-            })
-            .catch((error) => {
-              console.error(error)
-            })
-          localStorage.removeItem('booking')
-        }
-      }
-    })
-
-    onMounted(() => {
       fetchCars()
 
-      const paymentSuccess = route.query.success === 'truee'
-      const paymentFailure = route.query.success === 'falsee'
+      const paymentSuccess = route.query.success === 'true'
+      const paymentFailure = route.query.success === 'false'
 
       if (paymentSuccess) {
         toast.success('Your Booking Has Been Successful', {
@@ -415,11 +380,6 @@ export default {
       datetimeError,
       returnDateTimeError,
       carError,
-      publishableKey,
-      loading,
-      lineItems,
-      successURL,
-      cancelURL,
       stripePayment,
       checkoutRef
     }
